@@ -1,7 +1,7 @@
 package com.milet0819.notificationtest.common.utils
 
 import android.util.Log
-import com.milet0819.notificationtest.BuildConfig
+import com.milet0819.imagepicker.BuildConfig
 import kotlin.coroutines.coroutineContext
 
 fun logger(message: Any) {
