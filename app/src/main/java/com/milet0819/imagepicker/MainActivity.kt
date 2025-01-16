@@ -22,6 +22,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityMainBinding
+import com.milet0819.imagepicker.utils.PermissionUtils
 import com.milet0819.notificationtest.common.utils.logger
 import com.milet0819.notificationtest.common.utils.startActivity
 import com.milet0819.notificationtest.common.utils.toast
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity() {
              * READ_MEDIA_IMAGES 및 READ_MEDIA_VIDEO를 모두 요청하면 전체 사진 라이브러리가 선택 가능한 것으로 표시됩니다.
              */
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                if (ContextCompat.checkSelfPermission(baseContext, READ_MEDIA_VISUAL_USER_SELECTED) == PERMISSION_GRANTED) {
+                if (PermissionUtils.isGranted(baseContext, READ_MEDIA_VISUAL_USER_SELECTED)) {
                     startActivity<ImagePickerActivity>()
                 } else {
                     requestPermissons.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))

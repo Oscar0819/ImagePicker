@@ -20,8 +20,6 @@ class ImagePickerActivity : AppCompatActivity() {
         ActivityImagePickerBinding.inflate(layoutInflater)
     }
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -31,6 +29,7 @@ class ImagePickerActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
     }
 
     // Run the querying logic in a coroutine outside of the main thread to keep the app responsive.
