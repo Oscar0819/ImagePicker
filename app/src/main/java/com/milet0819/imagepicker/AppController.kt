@@ -14,6 +14,8 @@ class AppController: Application() {
     override fun onCreate() {
         super.onCreate()
 
-        componentLogger.initialize(this)
+        if (BuildConfig.DEBUG) {
+            componentLogger.initialize(this)
+        }
     }
 }

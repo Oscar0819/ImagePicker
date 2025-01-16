@@ -8,6 +8,7 @@ import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
 import android.app.Activity
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -16,11 +17,14 @@ import android.provider.MediaStore.Video
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityMainBinding
 import com.milet0819.notificationtest.common.utils.logger
+import com.milet0819.notificationtest.common.utils.startActivity
+import com.milet0819.notificationtest.common.utils.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,9 +39,44 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         logger(results)
-        results.keys.forEach {
-            val key = it
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val imagesPerm = results.getValue(READ_MEDIA_IMAGES)
+            val videoPerm = results.getValue(READ_MEDIA_VIDEO)
+            val selectedPerm = results.getValue(READ_MEDIA_VISUAL_USER_SELECTED)
+
+            // *READ_MEDIA_VISUAL_USER_SELECTED 권한 정리* 케이스 참고
+            if (imagesPerm && videoPerm && selectedPerm) {
+                startActivity<ImagePickerActivity>()
+            } else if (selectedPerm) {
+                startActivity<ImagePickerActivity>()
+            } else {
+                logger("Denied Permission")
+                toast("접근 권한이 없어 해당 기능을 사용할 수 없습니다.") // This sentence was referenced from KakaoTalk.
+            }
+
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val imagesPerm = results.getValue(READ_MEDIA_IMAGES)
+            val videoPerm = results.getValue(READ_MEDIA_VIDEO)
+
+            if (imagesPerm && videoPerm) {
+                startActivity<ImagePickerActivity>()
+            } else {
+                logger("Denied Permission")
+                toast("접근 권한이 없어 해당 기능을 사용할 수 없습니다.")
+            }
+
+        } else {
+            val readExternalStoragePerm = results.getValue(READ_EXTERNAL_STORAGE)
+
+            if (readExternalStoragePerm) {
+                startActivity<ImagePickerActivity>()
+            } else {
+                logger("Denied Permission")
+                toast("접근 권한이 없어 해당 기능을 사용할 수 없습니다.")
+            }
         }
+
     }
 
 
@@ -61,7 +100,12 @@ class MainActivity : AppCompatActivity() {
              * READ_MEDIA_IMAGES 및 READ_MEDIA_VIDEO를 모두 요청하면 전체 사진 라이브러리가 선택 가능한 것으로 표시됩니다.
              */
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                requestPermissons.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))
+                if (ContextCompat.checkSelfPermission(baseContext, READ_MEDIA_VISUAL_USER_SELECTED) == PERMISSION_GRANTED) {
+                    startActivity<ImagePickerActivity>()
+                } else {
+                    requestPermissons.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))
+                }
+
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 requestPermissons.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO))
             } else {
