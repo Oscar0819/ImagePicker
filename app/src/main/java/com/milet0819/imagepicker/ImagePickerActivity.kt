@@ -6,12 +6,15 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.MediaStore.Images
+import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ImagePickerActivity : AppCompatActivity() {
@@ -20,15 +23,33 @@ class ImagePickerActivity : AppCompatActivity() {
         ActivityImagePickerBinding.inflate(layoutInflater)
     }
 
+    val mMediaAdapter by lazy {
+        MediaAdapter()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(binding.root)
+        setSupportActionBar(binding.tbImagePicker)
+
+        supportActionBar?.let {
+            it.setDisplayHomeAsUpEnabled(true)
+            it.setDisplayShowHomeEnabled(true)
+        }
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        lifecycleScope.launch {
+            val images = getImages(contentResolver)
+            binding.rvImagePicker.adapter = mMediaAdapter
+
+            mMediaAdapter.submitList(images)
+        }
+
 
     }
 
@@ -75,5 +96,15 @@ class ImagePickerActivity : AppCompatActivity() {
         }
 
         return@withContext images
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }
