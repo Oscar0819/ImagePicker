@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
+import com.milet0819.imagepicker.utils.toPx
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,11 +46,16 @@ class ImagePickerActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val images = getImages(contentResolver)
-            binding.rvImagePicker.adapter = mMediaAdapter
+            val spanCount = 3
+            val space = 4.toPx(this@ImagePickerActivity)
+            val includeEdge = false
+            binding.rvImagePicker.apply {
+                addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
+                adapter = mMediaAdapter
+            }
 
             mMediaAdapter.submitList(images)
         }
-
 
     }
 
