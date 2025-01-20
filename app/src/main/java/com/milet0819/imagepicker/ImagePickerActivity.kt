@@ -1,5 +1,8 @@
 package com.milet0819.imagepicker
 
+import android.Manifest.permission.READ_MEDIA_IMAGES
+import android.Manifest.permission.READ_MEDIA_VIDEO
+import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.os.Build
@@ -8,12 +11,14 @@ import android.provider.MediaStore
 import android.provider.MediaStore.Images
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
 import com.milet0819.imagepicker.utils.toPx
+import com.milet0819.notificationtest.common.utils.logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,6 +31,12 @@ class ImagePickerActivity : AppCompatActivity() {
 
     val mMediaAdapter by lazy {
         MediaAdapter()
+    }
+
+    private val requestPermissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        logger(results)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +54,8 @@ class ImagePickerActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        initListener()
 
         lifecycleScope.launch {
             val images = getImages(contentResolver)
@@ -111,6 +124,30 @@ class ImagePickerActivity : AppCompatActivity() {
                 true
             }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun initListener() {
+        binding.tvImagePickerPermissionAccessManage.setOnClickListener {
+            val permissionBottomSheetActions = object : PermissionBottomSheetDialog.PermissionBottomSheetActions {
+                override fun onRequestMorePhotos() {
+                    logger("onRequestMorePhotos")
+
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        return
+                    }
+
+                    val permissions = arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED)
+                    requestPermissions.launch(permissions)
+                }
+
+                override fun onRequestAllPhotosPermission() {
+                    logger("onRequestAllPhotosPermission")
+                }
+
+            }
+
+            PermissionBottomSheetDialog(this@ImagePickerActivity, permissionBottomSheetActions).show()
         }
     }
 }

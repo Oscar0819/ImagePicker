@@ -3,4 +3,8 @@
 
     <string name="image_picker_permission_access_desc">선택한 일부 사진에만 액세스할 수 있는 권한을 \n 부여했습니다.</string>
     <string name="image_picker_permission_access_manage">관리</string>
+
+    <string name="permission_bottom_sheet_more_photo_select">더 많은 사진 선택</string>
+    <string name="permission_bottom_sheet_access_grant_all_photo">모든 사진에 대한 접근 허용</string>
+    <string name="cancel">취소</string>
 </resources>

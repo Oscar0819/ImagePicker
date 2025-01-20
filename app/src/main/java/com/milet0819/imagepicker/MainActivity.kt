@@ -1,34 +1,21 @@
 package com.milet0819.imagepicker
 
-import android.Manifest
 import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-import android.app.Activity
-import android.content.ContentResolver
-import android.content.ContentUris
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
-import android.provider.MediaStore.Images
-import android.provider.MediaStore.Video
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityMainBinding
 import com.milet0819.imagepicker.utils.PermissionUtils
 import com.milet0819.notificationtest.common.utils.logger
 import com.milet0819.notificationtest.common.utils.startActivity
 import com.milet0819.notificationtest.common.utils.toast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    val requestPermissons = registerForActivityResult(
+    private val requestPermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         logger(results)
@@ -104,13 +91,13 @@ class MainActivity : AppCompatActivity() {
                 if (PermissionUtils.isGranted(baseContext, READ_MEDIA_VISUAL_USER_SELECTED)) {
                     startActivity<ImagePickerActivity>()
                 } else {
-                    requestPermissons.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))
+                    requestPermissions.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))
                 }
 
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requestPermissons.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO))
+                requestPermissions.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO))
             } else {
-                requestPermissons.launch(arrayOf(READ_EXTERNAL_STORAGE))
+                requestPermissions.launch(arrayOf(READ_EXTERNAL_STORAGE))
             }
         }
     }

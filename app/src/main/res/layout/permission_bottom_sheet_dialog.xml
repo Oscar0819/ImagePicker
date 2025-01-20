@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    
+    <TextView
+        android:id="@+id/tvPermissionBottomSheetMorePhotoSelect"
+        style="@style/PermissionBottomSheetDialogTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/permission_bottom_sheet_more_photo_select"
+        />
+
+    <TextView
+        android:id="@+id/tvPermissionBottomSheetAccessGrantAllPhoto"
+        style="@style/PermissionBottomSheetDialogTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/permission_bottom_sheet_access_grant_all_photo"
+        />
+
+
+
+</LinearLayout>
