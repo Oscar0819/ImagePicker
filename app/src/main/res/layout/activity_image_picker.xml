@@ -25,15 +25,57 @@
         android:background="#E0E0E0"
         app:layout_constraintTop_toBottomOf="@id/tbImagePicker" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/clImagePickerPermissionManage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/vToolbarLine">
+
+        <TextView
+            android:id="@+id/tvImagePickerPermissionAccessDesc"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/image_picker_permission_access_desc"
+            android:textColor="@color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/tvImagePickerPermissionAccessManage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvImagePickerPermissionAccessManage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:layout_marginEnd="16dp"
+            android:text="@string/image_picker_permission_access_manage"
+            android:textColor="#3366FF"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/vImagePickerPermissionManageLine"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        app:layout_constraintTop_toBottomOf="@+id/clImagePickerPermissionManage" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvImagePicker"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:spanCount="3"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/vToolbarLine"
+        app:layout_constraintTop_toBottomOf="@+id/vImagePickerPermissionManageLine"
+        app:spanCount="3"
         tools:listitem="@layout/item_media" />
 </androidx.constraintlayout.widget.ConstraintLayout>
