@@ -1,6 +1,8 @@
 package com.milet0819.imagepicker
 
+import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -27,9 +29,25 @@ class MediaAdapter: ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : Di
 }) {
     inner class MediaViewHolder(val binding: ItemMediaBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: Media) {
-            binding.ivMedia.also {
-                Glide.with(it).load(item.uri).into(it)
+            binding.also {
+                if (layoutPosition == 0) {
+                    it.ivMedia.visibility = View.GONE
+                    it.ivCamera.visibility = View.VISIBLE
+//                    it.root.setBackgroundColor(Color.GRAY)
+                    binding.root.setOnClickListener {
+                        startCamera()
+                    }
+
+                } else {
+                    it.ivMedia.visibility = View.VISIBLE
+                    it.ivCamera.visibility = View.GONE
+                    Glide.with(it.ivMedia).load(item.uri).into(it.ivMedia)
+                }
             }
+        }
+
+        private fun startCamera() {
+
         }
     }
 

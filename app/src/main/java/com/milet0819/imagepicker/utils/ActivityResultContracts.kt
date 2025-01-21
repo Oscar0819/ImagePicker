@@ -25,3 +25,10 @@ inline fun Fragment.registerForActivityResult(
             callback(activityResult)
         }
     }
+
+inline fun ComponentActivity.requestPermission(
+    crossinline callback: (Boolean) -> Unit
+): ActivityResultLauncher<String> =
+    registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        callback(isGranted)
+    }

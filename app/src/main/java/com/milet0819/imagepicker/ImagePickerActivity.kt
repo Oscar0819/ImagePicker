@@ -49,8 +49,6 @@ class ImagePickerActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(binding.root)
 
-        initPermissionManageLayout()
-
         setSupportActionBar(binding.tbImagePicker)
 
         supportActionBar?.let {
@@ -71,10 +69,12 @@ class ImagePickerActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        initPermissionManageLayout()
+
         lifecycleScope.launch {
             val images = getImages(contentResolver)
             val spanCount = 3
-            val space = 4.toPx(this@ImagePickerActivity)
+            val space = 4
             val includeEdge = false
             binding.rvImagePicker.apply {
                 addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
@@ -95,13 +95,15 @@ class ImagePickerActivity : AppCompatActivity() {
             !PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_VIDEO)
             ) {
             clImagePickerPermissionManage.visibility = View.VISIBLE
+        } else {
+            clImagePickerPermissionManage.visibility = View.GONE
         }
 
     }
 
     // Run the querying logic in a coroutine outside of the main thread to keep the app responsive.
     // Keep in mind that this code snippet is querying only images of the shared storage.
-    suspend fun getImages(contentResolver: ContentResolver): List<Media> = withContext(Dispatchers.IO) {
+    suspend fun getImages(contentResolver: ContentResolver): List<Media?> = withContext(Dispatchers.IO) {
         val projecttion = arrayOf(
             Images.Media._ID,
             Images.Media.DISPLAY_NAME,
@@ -116,7 +118,7 @@ class ImagePickerActivity : AppCompatActivity() {
             Images.Media.EXTERNAL_CONTENT_URI
         }
 
-        val images = mutableListOf<Media>()
+        val images = mutableListOf<Media?>()
 
         contentResolver.query(
             collectionUri,
