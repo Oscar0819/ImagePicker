@@ -3,13 +3,18 @@ package com.milet0819.imagepicker
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+import android.content.ActivityNotFoundException
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.MediaStore.Images
+import android.provider.Settings
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +22,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
+import com.milet0819.imagepicker.utils.PermissionUtils
 import com.milet0819.imagepicker.utils.toPx
 import com.milet0819.notificationtest.common.utils.logger
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +48,9 @@ class ImagePickerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(binding.root)
+
+        initPermissionManageLayout()
+
         setSupportActionBar(binding.tbImagePicker)
 
         supportActionBar?.let {
@@ -57,6 +66,11 @@ class ImagePickerActivity : AppCompatActivity() {
 
         initListener()
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+
         lifecycleScope.launch {
             val images = getImages(contentResolver)
             val spanCount = 3
@@ -68,6 +82,19 @@ class ImagePickerActivity : AppCompatActivity() {
             }
 
             mMediaAdapter.submitList(images)
+        }
+    }
+
+    private fun initPermissionManageLayout() = with(binding) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return@with
+        }
+
+        if (PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_VISUAL_USER_SELECTED) &&
+            !PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_IMAGES) &&
+            !PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_VIDEO)
+            ) {
+            clImagePickerPermissionManage.visibility = View.VISIBLE
         }
 
     }
@@ -143,6 +170,20 @@ class ImagePickerActivity : AppCompatActivity() {
 
                 override fun onRequestAllPhotosPermission() {
                     logger("onRequestAllPhotosPermission")
+
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        return
+                    }
+
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", packageName, null)
+                    }
+
+                    try {
+                        startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        logger("수행할 수 있는 컴포넌트 없음.")
+                    }
                 }
 
             }
