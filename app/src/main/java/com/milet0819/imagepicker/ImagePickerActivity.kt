@@ -4,6 +4,7 @@ import android.Manifest
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -16,32 +17,43 @@ import android.provider.MediaStore.Images
 import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
+import android.webkit.WebChromeClient
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
 import com.milet0819.imagepicker.utils.isGranted
 import com.milet0819.imagepicker.utils.showListOptionAlertDialog
+import com.milet0819.notificationtest.common.utils.captureVideo
 import com.milet0819.notificationtest.common.utils.logger
 import com.milet0819.notificationtest.common.utils.registerForActivityResult
 import com.milet0819.notificationtest.common.utils.requestPermission
+import com.milet0819.notificationtest.common.utils.takeCamera
 import com.milet0819.notificationtest.common.utils.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class ImagePickerActivity : AppCompatActivity() {
 
-    val binding: ActivityImagePickerBinding by lazy {
+    private val binding: ActivityImagePickerBinding by lazy {
         ActivityImagePickerBinding.inflate(layoutInflater)
     }
 
-    val mMediaAdapter by lazy {
+    private lateinit var mImageUri: Uri
+    private lateinit var mVideoUri: Uri
+
+    private val mMediaAdapter by lazy {
         MediaAdapter(object : MediaAdapter.CameraAction {
             override fun onRequestCamera(position: Int) {
                 // 재활용으로 인한 이벤트 방지 로직
@@ -75,17 +87,29 @@ class ImagePickerActivity : AppCompatActivity() {
         }
     }
 
-    private val requestCamera = registerForActivityResult { activityResult ->
-        logger("picture result=$activityResult")
-
-        when (activityResult.resultCode) {
-            RESULT_OK -> {
-                logger("${activityResult.data}")
+    private val takePickture = takeCamera { result ->
+        if (result) {
+            logger("Success")
+            val resultIntent = Intent().apply {
+                putExtra(MEDIA_URI, mImageUri.toString())
             }
+            setResult(RESULT_OK, resultIntent)
+            finish()
+        } else {
+            logger("Cancel or can't take a URI")
+        }
+    }
 
-            RESULT_CANCELED -> {
-                logger("canceled")
+    private val captureVideo = captureVideo { result ->
+        if (result) {
+            logger("Success")
+            val resultIntent = Intent().apply {
+                putExtra(MEDIA_URI, mVideoUri.toString())
             }
+            setResult(RESULT_OK, resultIntent)
+            finish()
+        } else {
+            logger("Cancel or can't take a URI")
         }
     }
 
@@ -188,6 +212,7 @@ class ImagePickerActivity : AppCompatActivity() {
 
                 val image = Media(uri, name, size, mimeType)
 
+                // TODO 추가적인 처리?
                 if (image.size == 0L) {
                     logger("Empty image")
                     continue
@@ -254,28 +279,36 @@ class ImagePickerActivity : AppCompatActivity() {
      */
     private fun showCameraOptionsAlert() {
         showListOptionAlertDialog("촬영", arrayOf("사진 촬영", "동영상 촬영")) { index ->
+            val now = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+
             when (index) {
                 0 -> {
-                    val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                    val dirPath = AppController.imagesDirPath
+                    val imageDir = File(dirPath)
+                    imageDir.mkdirs()
 
-                    try {
-                        requestCamera.launch(takePictureIntent)
-                    } catch (e: ActivityNotFoundException) {
-                        e.printStackTrace()
-                        toast(R.string.not_found_camera)
-                    }
+                    val fileName = "img_$now.jpg"
+                    val imageFile = File(dirPath, fileName)
+                    val imageUri = FileProvider.getUriForFile(this@ImagePickerActivity, "${packageName}.fileprovider", imageFile)
+                    mImageUri = imageUri
+                    takePickture.launch(imageUri)
                 }
                 1 -> {
-                    Intent(MediaStore.ACTION_VIDEO_CAPTURE).also { takeVideoIntent ->
-                        takeVideoIntent.resolveActivity(packageManager)?.also {
-                            requestCamera.launch(takeVideoIntent)
-                        } ?: run {
-                            //display error state to the user
-                            toast(R.string.not_found_camera)
-                        }
-                    }
+                    val dirPath = AppController.videoDirPath
+                    val videoDir = File(dirPath)
+                    videoDir.mkdirs()
+
+                    val fileName = "vid_$now.mp4"
+                    val videoFile = File(videoDir, fileName)
+                    val videoUri = FileProvider.getUriForFile(this@ImagePickerActivity, "${packageName}.fileprovider", videoFile)
+                    mVideoUri = videoUri
+                    captureVideo.launch(videoUri)
                 }
             }
         }
+    }
+
+    companion object {
+        const val MEDIA_URI = "mediaUri"
     }
 }

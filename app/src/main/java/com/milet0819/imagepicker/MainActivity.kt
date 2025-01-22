@@ -4,6 +4,7 @@ import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -11,16 +12,35 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.bumptech.glide.Glide
 import com.milet0819.imagepicker.databinding.ActivityMainBinding
+import com.milet0819.imagepicker.utils.clearDir
 import com.milet0819.imagepicker.utils.isGranted
+import com.milet0819.notificationtest.common.utils.buildIntent
 import com.milet0819.notificationtest.common.utils.logger
-import com.milet0819.notificationtest.common.utils.startActivity
+import com.milet0819.notificationtest.common.utils.registerForActivityResult
 import com.milet0819.notificationtest.common.utils.toast
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     val binding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
+    }
+
+    private val imagePickerLauncher = registerForActivityResult { result ->
+        if (result.resultCode == RESULT_OK) {
+            val mediaUri = result.data?.getStringExtra(ImagePickerActivity.MEDIA_URI)
+
+            if (mediaUri == null) {
+                logger("Media URI is null")
+                return@registerForActivityResult
+            }
+
+             val uri = Uri.parse(mediaUri)
+
+            Glide.with(baseContext).load(uri).into(binding.ivTest)
+        }
     }
 
     private val requestPermissions = registerForActivityResult(
@@ -35,9 +55,9 @@ class MainActivity : AppCompatActivity() {
 
             // *READ_MEDIA_VISUAL_USER_SELECTED 권한 정리* 케이스 참고
             if (imagesPerm && videoPerm && selectedPerm) {
-                startActivity<ImagePickerActivity>()
+                imagePickerLauncher.launch(buildIntent<ImagePickerActivity>())
             } else if (selectedPerm) {
-                startActivity<ImagePickerActivity>()
+                imagePickerLauncher.launch(buildIntent<ImagePickerActivity>())
             } else {
                 logger("Denied Permission")
                 toast("접근 권한이 없어 해당 기능을 사용할 수 없습니다.") // This sentence was referenced from KakaoTalk.
@@ -48,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             val videoPerm = results.getValue(READ_MEDIA_VIDEO)
 
             if (imagesPerm && videoPerm) {
-                startActivity<ImagePickerActivity>()
+                imagePickerLauncher.launch(buildIntent<ImagePickerActivity>())
             } else {
                 logger("Denied Permission")
                 toast("접근 권한이 없어 해당 기능을 사용할 수 없습니다.")
@@ -58,7 +78,7 @@ class MainActivity : AppCompatActivity() {
             val readExternalStoragePerm = results.getValue(READ_EXTERNAL_STORAGE)
 
             if (readExternalStoragePerm) {
-                startActivity<ImagePickerActivity>()
+                imagePickerLauncher.launch(buildIntent<ImagePickerActivity>())
             } else {
                 logger("Denied Permission")
                 toast("접근 권한이 없어 해당 기능을 사용할 수 없습니다.")
@@ -89,7 +109,7 @@ class MainActivity : AppCompatActivity() {
              */
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 if (isGranted(baseContext, READ_MEDIA_VISUAL_USER_SELECTED)) {
-                    startActivity<ImagePickerActivity>()
+                    imagePickerLauncher.launch(buildIntent<ImagePickerActivity>())
                 } else {
                     requestPermissions.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))
                 }
@@ -100,6 +120,16 @@ class MainActivity : AppCompatActivity() {
                 requestPermissions.launch(arrayOf(READ_EXTERNAL_STORAGE))
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        /**
+         * onDestroy는 호출이 보장되지 않아서 캐시디렉토리를 이용
+         */
+        clearDir(File(cacheDir, AppController.IMAGES_DIR))
+        clearDir(File(cacheDir, AppController.VIDEOS_DIR))
     }
 
 }
