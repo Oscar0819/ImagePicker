@@ -12,9 +12,7 @@ inline fun ComponentActivity.registerForActivityResult(
     crossinline callback: (ActivityResult) -> Unit
 ): ActivityResultLauncher<Intent> =
     registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult  ->
-        if (activityResult.resultCode == Activity.RESULT_OK) {
-            callback(activityResult)
-        }
+        callback(activityResult)
     }
 
 inline fun Fragment.registerForActivityResult(

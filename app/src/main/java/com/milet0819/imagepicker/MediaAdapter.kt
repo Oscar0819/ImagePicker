@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.milet0819.imagepicker.databinding.ItemMediaBinding
 import com.milet0819.imagepicker.utils.isGranted
+import com.milet0819.notificationtest.common.utils.logger
 
 class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : DiffUtil.ItemCallback<Media>() {
     /**
@@ -47,6 +48,7 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
                 } else {
                     it.ivMedia.visibility = View.VISIBLE
                     it.ivCamera.visibility = View.GONE
+
                     // TODO CHECK Glide options
                     Glide.with(it.ivMedia).load(item.uri).into(it.ivMedia)
                 }

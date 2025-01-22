@@ -75,8 +75,18 @@ class ImagePickerActivity : AppCompatActivity() {
         }
     }
 
-    private val requestCamera = registerForActivityResult { result ->
-        logger("picture result=$result")
+    private val requestCamera = registerForActivityResult { activityResult ->
+        logger("picture result=$activityResult")
+
+        when (activityResult.resultCode) {
+            RESULT_OK -> {
+                logger("${activityResult.data}")
+            }
+
+            RESULT_CANCELED -> {
+                logger("canceled")
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -177,6 +187,12 @@ class ImagePickerActivity : AppCompatActivity() {
                 val mimeType = cursor.getString(mimeTypeColumn)
 
                 val image = Media(uri, name, size, mimeType)
+
+                if (image.size == 0L) {
+                    logger("Empty image")
+                    continue
+                }
+
                 images.add(image)
             }
         }
