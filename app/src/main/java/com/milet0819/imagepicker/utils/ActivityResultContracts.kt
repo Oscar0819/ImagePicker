@@ -32,3 +32,10 @@ inline fun ComponentActivity.requestPermission(
     registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         callback(isGranted)
     }
+
+inline fun ComponentActivity.requestPermissions(
+    crossinline callback: (Map<String, Boolean>) -> Unit
+): ActivityResultLauncher<Array<String>> =
+    registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+        callback(results)
+    }
