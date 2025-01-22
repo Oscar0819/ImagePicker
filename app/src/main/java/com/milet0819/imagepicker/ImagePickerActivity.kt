@@ -1,5 +1,6 @@
 package com.milet0819.imagepicker
 
+import android.Manifest
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
@@ -15,16 +16,21 @@ import android.provider.MediaStore.Images
 import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
-import com.milet0819.imagepicker.utils.PermissionUtils
-import com.milet0819.imagepicker.utils.toPx
+import com.milet0819.imagepicker.utils.isGranted
+import com.milet0819.imagepicker.utils.showListOptionAlertDialog
 import com.milet0819.notificationtest.common.utils.logger
+import com.milet0819.notificationtest.common.utils.registerForActivityResult
+import com.milet0819.notificationtest.common.utils.requestPermission
+import com.milet0819.notificationtest.common.utils.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,7 +42,21 @@ class ImagePickerActivity : AppCompatActivity() {
     }
 
     val mMediaAdapter by lazy {
-        MediaAdapter()
+        MediaAdapter(object : MediaAdapter.CameraAction {
+            override fun onRequestCamera(position: Int) {
+                // 재활용으로 인한 이벤트 방지 로직
+                if (position != 0) {
+                    logger("Is not position 0")
+                    return
+                }
+
+                if (isGranted(this@ImagePickerActivity, Manifest.permission.CAMERA)) {
+                    showCameraOptionsAlert()
+                } else {
+                    requestCameraPermission.launch(Manifest.permission.CAMERA)
+                }
+            }
+        })
     }
 
     private val requestPermissions = registerForActivityResult(
@@ -44,6 +64,21 @@ class ImagePickerActivity : AppCompatActivity() {
     ) { results ->
         logger(results)
     }
+
+    private val requestCameraPermission = requestPermission { result ->
+        logger("CameraPermission : $result")
+
+        if (result) {
+            showCameraOptionsAlert()
+        } else {
+            toast(getString(R.string.permission_rationale, "카메라"))
+        }
+    }
+
+    private val requestCamera = registerForActivityResult { result ->
+        logger("picture result=$result")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -90,9 +125,9 @@ class ImagePickerActivity : AppCompatActivity() {
             return@with
         }
 
-        if (PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_VISUAL_USER_SELECTED) &&
-            !PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_IMAGES) &&
-            !PermissionUtils.isGranted(this@ImagePickerActivity, READ_MEDIA_VIDEO)
+        if (isGranted(this@ImagePickerActivity, READ_MEDIA_VISUAL_USER_SELECTED) &&
+            !isGranted(this@ImagePickerActivity, READ_MEDIA_IMAGES) &&
+            !isGranted(this@ImagePickerActivity, READ_MEDIA_VIDEO)
             ) {
             clImagePickerPermissionManage.visibility = View.VISIBLE
         } else {
@@ -103,6 +138,7 @@ class ImagePickerActivity : AppCompatActivity() {
 
     // Run the querying logic in a coroutine outside of the main thread to keep the app responsive.
     // Keep in mind that this code snippet is querying only images of the shared storage.
+    // TODO ADD getVideo & All
     suspend fun getImages(contentResolver: ContentResolver): List<Media?> = withContext(Dispatchers.IO) {
         val projecttion = arrayOf(
             Images.Media._ID,
@@ -119,6 +155,8 @@ class ImagePickerActivity : AppCompatActivity() {
         }
 
         val images = mutableListOf<Media?>()
+
+        images.add(null)
 
         contentResolver.query(
             collectionUri,
@@ -191,6 +229,37 @@ class ImagePickerActivity : AppCompatActivity() {
             }
 
             PermissionBottomSheetDialog(this@ImagePickerActivity, permissionBottomSheetActions).show()
+        }
+    }
+
+    /**
+     *  Source: Android Developer Documentation (Camera Intents)
+     *  URL: https://developer.android.com/media/camera/camera-intents?hl=ko
+     */
+    private fun showCameraOptionsAlert() {
+        showListOptionAlertDialog("촬영", arrayOf("사진 촬영", "동영상 촬영")) { index ->
+            when (index) {
+                0 -> {
+                    val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+                    try {
+                        requestCamera.launch(takePictureIntent)
+                    } catch (e: ActivityNotFoundException) {
+                        e.printStackTrace()
+                        toast(R.string.not_found_camera)
+                    }
+                }
+                1 -> {
+                    Intent(MediaStore.ACTION_VIDEO_CAPTURE).also { takeVideoIntent ->
+                        takeVideoIntent.resolveActivity(packageManager)?.also {
+                            requestCamera.launch(takeVideoIntent)
+                        } ?: run {
+                            //display error state to the user
+                            toast(R.string.not_found_camera)
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -1,17 +1,17 @@
 package com.milet0819.imagepicker
 
-import android.graphics.Color
+import android.Manifest
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
 import com.milet0819.imagepicker.databinding.ItemMediaBinding
+import com.milet0819.imagepicker.utils.isGranted
 
-class MediaAdapter: ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : DiffUtil.ItemCallback<Media>() {
+class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : DiffUtil.ItemCallback<Media>() {
     /**
      * areItemsTheSame 함수가 먼저 실행이 되고 해당 함수의 결과로 true가 반환됐을 경우에만 areContentsTheSame()이 호출됨.
      * 그렇기 때문에 areItemsTheSame()에는 일반적으로 id 처럼 아이템을 식별할 수 있는 유니크한 값을 비교하고,
@@ -25,29 +25,32 @@ class MediaAdapter: ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : Di
     override fun areContentsTheSame(oldItem: Media, newItem: Media): Boolean {
         return oldItem == newItem
     }
-
 }) {
+
+    interface CameraAction {
+        fun onRequestCamera(position: Int)
+    }
+
     inner class MediaViewHolder(val binding: ItemMediaBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: Media) {
+        val context = binding.root.context
+
+        fun bind(item: Media?) {
             binding.also {
-                if (layoutPosition == 0) {
+                if (item == null) {
                     it.ivMedia.visibility = View.GONE
                     it.ivCamera.visibility = View.VISIBLE
 //                    it.root.setBackgroundColor(Color.GRAY)
                     binding.root.setOnClickListener {
-                        startCamera()
+                        cameraAction.onRequestCamera(layoutPosition)
                     }
 
                 } else {
                     it.ivMedia.visibility = View.VISIBLE
                     it.ivCamera.visibility = View.GONE
+                    // TODO CHECK Glide options
                     Glide.with(it.ivMedia).load(item.uri).into(it.ivMedia)
                 }
             }
-        }
-
-        private fun startCamera() {
-
         }
     }
 
