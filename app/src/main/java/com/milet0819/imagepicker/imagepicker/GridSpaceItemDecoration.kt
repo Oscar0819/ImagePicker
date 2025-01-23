@@ -1,4 +1,4 @@
-package com.milet0819.imagepicker
+package com.milet0819.imagepicker.imagepicker
 
 import android.graphics.Rect
 import android.view.View

@@ -8,7 +8,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import dagger.Component
 
 inline fun ComponentActivity.registerForActivityResult(
     crossinline callback: (ActivityResult) -> Unit

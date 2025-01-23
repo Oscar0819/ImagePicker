@@ -35,7 +35,7 @@
         android:theme="@style/Theme.ImagePicker"
         tools:targetApi="31">
         <activity
-            android:name=".ImagePickerActivity"
+            android:name=".imagepicker.ImagePickerActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

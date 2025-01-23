@@ -1,6 +1,5 @@
-package com.milet0819.imagepicker
+package com.milet0819.imagepicker.imagepicker
 
-import android.Manifest
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,8 +8,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.milet0819.imagepicker.databinding.ItemMediaBinding
-import com.milet0819.imagepicker.utils.isGranted
-import com.milet0819.notificationtest.common.utils.logger
 
 class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : DiffUtil.ItemCallback<Media>() {
     /**
@@ -28,6 +25,11 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
     }
 }) {
 
+    companion object {
+        const val IMAGE = "image"
+        const val VIDEO = "video"
+    }
+
     interface CameraAction {
         fun onRequestCamera(position: Int)
     }
@@ -40,7 +42,7 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
                 if (item == null) {
                     it.ivMedia.visibility = View.GONE
                     it.ivCamera.visibility = View.VISIBLE
-//                    it.root.setBackgroundColor(Color.GRAY)
+
                     binding.root.setOnClickListener {
                         cameraAction.onRequestCamera(layoutPosition)
                     }
@@ -49,10 +51,37 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
                     it.ivMedia.visibility = View.VISIBLE
                     it.ivCamera.visibility = View.GONE
 
+                    checkType(item)
+
                     // TODO CHECK Glide options
                     Glide.with(it.ivMedia).load(item.uri).into(it.ivMedia)
                 }
             }
+        }
+
+        private fun checkType(item: Media?) {
+            if (item?.mimeType?.startsWith(VIDEO) == true) {
+                binding.tvMediaDuration.text = convertDuration(item.duration)
+                binding.tvMediaDuration.visibility = View.VISIBLE
+
+            }
+        }
+
+        private fun convertDuration(durationMilliseconds: Int): String {
+            val duration = durationMilliseconds / 1000
+
+            var seconds = duration % 60
+            var minutes = duration / 60 % 60
+            var hours = (duration / 60) / 60
+
+            if (hours > 0) {
+                return String.format("%d:%02d:%02d", hours, minutes, seconds)
+            } else if (minutes > 0) {
+                return String.format("%d:%02d", minutes, seconds)
+            } else {
+                return String.format("0:%02d", seconds)
+            }
+
         }
     }
 

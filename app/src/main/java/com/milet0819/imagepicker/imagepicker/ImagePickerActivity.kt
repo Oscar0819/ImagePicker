@@ -1,10 +1,9 @@
-package com.milet0819.imagepicker
+package com.milet0819.imagepicker.imagepicker
 
 import android.Manifest
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -14,26 +13,25 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.MediaStore.Images
+
 import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
-import android.webkit.WebChromeClient
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
+import com.milet0819.imagepicker.AppController
+import com.milet0819.imagepicker.PermissionBottomSheetDialog
+import com.milet0819.imagepicker.R
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
 import com.milet0819.imagepicker.utils.isGranted
 import com.milet0819.imagepicker.utils.showListOptionAlertDialog
 import com.milet0819.notificationtest.common.utils.captureVideo
 import com.milet0819.notificationtest.common.utils.logger
-import com.milet0819.notificationtest.common.utils.registerForActivityResult
 import com.milet0819.notificationtest.common.utils.requestPermission
 import com.milet0819.notificationtest.common.utils.takeCamera
 import com.milet0819.notificationtest.common.utils.toast
@@ -87,7 +85,7 @@ class ImagePickerActivity : AppCompatActivity() {
         }
     }
 
-    private val takePickture = takeCamera { result ->
+    private val takePicture = takeCamera { result ->
         if (result) {
             logger("Success")
             val resultIntent = Intent().apply {
@@ -141,7 +139,8 @@ class ImagePickerActivity : AppCompatActivity() {
         initPermissionManageLayout()
 
         lifecycleScope.launch {
-            val images = getImages(contentResolver)
+
+
             val spanCount = 3
             val space = 4
             val includeEdge = false
@@ -150,7 +149,11 @@ class ImagePickerActivity : AppCompatActivity() {
                 adapter = mMediaAdapter
             }
 
-            mMediaAdapter.submitList(images)
+            // TODO TEST
+//            val images = getImages(contentResolver)
+            val videos = getVideos(contentResolver)
+//            val mediaList = getMediaList(contentResolver)
+            mMediaAdapter.submitList(videos)
         }
     }
 
@@ -172,9 +175,8 @@ class ImagePickerActivity : AppCompatActivity() {
 
     // Run the querying logic in a coroutine outside of the main thread to keep the app responsive.
     // Keep in mind that this code snippet is querying only images of the shared storage.
-    // TODO ADD getVideo & All
-    suspend fun getImages(contentResolver: ContentResolver): List<Media?> = withContext(Dispatchers.IO) {
-        val projecttion = arrayOf(
+    private suspend fun getImages(contentResolver: ContentResolver): List<Media?> = withContext(Dispatchers.IO) {
+        val projection = arrayOf(
             Images.Media._ID,
             Images.Media.DISPLAY_NAME,
             Images.Media.SIZE,
@@ -194,7 +196,7 @@ class ImagePickerActivity : AppCompatActivity() {
 
         contentResolver.query(
             collectionUri,
-            projecttion,
+            projection,
             null,
             null,
             "${Images.Media.DATE_ADDED} DESC"
@@ -210,7 +212,11 @@ class ImagePickerActivity : AppCompatActivity() {
                 val size = cursor.getLong(sizeColumn)
                 val mimeType = cursor.getString(mimeTypeColumn)
 
-                val image = Media(uri, name, size, mimeType)
+                val image = Media(
+                    uri = uri,
+                    name = name,
+                    size = size,
+                    mimeType = mimeType)
 
                 // TODO 추가적인 처리?
                 if (image.size == 0L) {
@@ -225,6 +231,126 @@ class ImagePickerActivity : AppCompatActivity() {
         return@withContext images
     }
 
+    private suspend fun getVideos(contentResolver: ContentResolver): List<Media?> = withContext(Dispatchers.IO) {
+        val projection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.DISPLAY_NAME,
+            MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.DURATION,
+            MediaStore.Video.Media.MIME_TYPE,
+        )
+
+        val collectionUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Query all the device storage volumes instead of the primary only
+            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        }
+
+        val videos = mutableListOf<Media?>()
+
+        videos.add(null)
+
+        contentResolver.query(
+            collectionUri,
+            projection,
+            null,
+            null,
+            "${MediaStore.Video.Media.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+            val mimeTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.MIME_TYPE)
+
+            while (cursor.moveToNext()) {
+                val uri = ContentUris.withAppendedId(collectionUri, cursor.getLong(idColumn))
+                val name = cursor.getString(displayNameColumn)
+                val size = cursor.getLong(sizeColumn)
+                val duration = cursor.getInt(durationColumn)
+                val mimeType = cursor.getString(mimeTypeColumn)
+
+                val video = Media(
+                    uri = uri,
+                    name = name,
+                    size = size,
+                    duration = duration,
+                    mimeType = mimeType)
+
+                // TODO 추가적인 처리?
+                if (video.size == 0L) {
+                    logger("Empty image")
+                    continue
+                }
+
+                videos.add(video)
+            }
+        }
+
+        return@withContext videos
+    }
+
+    private suspend fun getMediaList(contentResolver: ContentResolver): List<Media?> = withContext(Dispatchers.IO) {
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.SIZE,
+            MediaStore.Files.FileColumns.DURATION,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+        )
+
+        val collectionUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Query all the device storage volumes instead of the primary only
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Files.getContentUri("external")
+        }
+
+        val mediaList = mutableListOf<Media?>()
+
+        mediaList.add(null)
+
+        contentResolver.query(
+            collectionUri,
+            projection,
+            null,
+            null,
+            "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
+            val mimeTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+
+            while (cursor.moveToNext()) {
+                val uri = ContentUris.withAppendedId(collectionUri, cursor.getLong(idColumn))
+                val name = cursor.getString(displayNameColumn)
+                val size = cursor.getLong(sizeColumn)
+                val duration = cursor.getInt(durationColumn)
+                val mimeType = cursor.getString(mimeTypeColumn)
+
+                val media = Media(
+                    uri = uri,
+                    name = name,
+                    size = size,
+                    duration = duration,
+                    mimeType = mimeType)
+
+                // TODO 추가적인 처리?
+                if (media.size == 0L) {
+                    logger("Empty image")
+                    continue
+                }
+
+                mediaList.add(media)
+            }
+        }
+
+        return@withContext mediaList
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
@@ -237,7 +363,8 @@ class ImagePickerActivity : AppCompatActivity() {
 
     private fun initListener() {
         binding.tvImagePickerPermissionAccessManage.setOnClickListener {
-            val permissionBottomSheetActions = object : PermissionBottomSheetDialog.PermissionBottomSheetActions {
+            val permissionBottomSheetActions = object :
+                PermissionBottomSheetDialog.PermissionBottomSheetActions {
                 override fun onRequestMorePhotos() {
                     logger("onRequestMorePhotos")
 
@@ -291,7 +418,7 @@ class ImagePickerActivity : AppCompatActivity() {
                     val imageFile = File(dirPath, fileName)
                     val imageUri = FileProvider.getUriForFile(this@ImagePickerActivity, "${packageName}.fileprovider", imageFile)
                     mImageUri = imageUri
-                    takePickture.launch(imageUri)
+                    takePicture.launch(imageUri)
                 }
                 1 -> {
                     val dirPath = AppController.videoDirPath
