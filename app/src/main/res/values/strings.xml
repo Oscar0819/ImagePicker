@@ -15,4 +15,8 @@
 
     <string name="camera">카메라</string>
     <string name="not_found_camera">카메라 앱을 찾을 수 없습니다.</string>
+
+    <string name="menu_all">전체</string>
+    <string name="menu_image">사진</string>
+    <string name="menu_video">영상</string>
 </resources>

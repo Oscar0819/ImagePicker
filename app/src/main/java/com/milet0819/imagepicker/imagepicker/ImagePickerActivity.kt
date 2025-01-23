@@ -15,11 +15,14 @@ import android.provider.MediaStore
 import android.provider.MediaStore.Images
 
 import android.provider.Settings
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -121,6 +124,7 @@ class ImagePickerActivity : AppCompatActivity() {
         supportActionBar?.let {
             it.setDisplayHomeAsUpEnabled(true)
             it.setDisplayShowHomeEnabled(true)
+            it.setDisplayShowTitleEnabled(false)
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -151,9 +155,9 @@ class ImagePickerActivity : AppCompatActivity() {
 
             // TODO TEST
 //            val images = getImages(contentResolver)
-            val videos = getVideos(contentResolver)
-//            val mediaList = getMediaList(contentResolver)
-            mMediaAdapter.submitList(videos)
+//            val videos = getVideos(contentResolver)
+            val mediaList = getMediaList(contentResolver)
+            mMediaAdapter.submitList(mediaList)
         }
     }
 
@@ -304,6 +308,7 @@ class ImagePickerActivity : AppCompatActivity() {
             // Query all the device storage volumes instead of the primary only
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
+            // TODO 미디어 리스트 가져올 때 Q버전 미만에서 크래시 발생하는 부분 수정 중
             MediaStore.Files.getContentUri("external")
         }
 
@@ -362,6 +367,16 @@ class ImagePickerActivity : AppCompatActivity() {
     }
 
     private fun initListener() {
+        binding.clMenu.setOnClickListener {
+            val popup = PopupMenu(this@ImagePickerActivity, it)
+            popup.setOnMenuItemClickListener {
+
+            }
+            val inflater: MenuInflater = popup.menuInflater
+            inflater.inflate(R.menu.image_picker_toolbar_menu, popup.menu)
+            popup.show()
+        }
+
         binding.tvImagePickerPermissionAccessManage.setOnClickListener {
             val permissionBottomSheetActions = object :
                 PermissionBottomSheetDialog.PermissionBottomSheetActions {
