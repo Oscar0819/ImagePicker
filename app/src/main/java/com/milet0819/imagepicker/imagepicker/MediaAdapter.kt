@@ -54,7 +54,9 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
                     checkType(item)
 
                     // TODO CHECK Glide options
-                    Glide.with(it.ivMedia).load(item.uri).into(it.ivMedia)
+                    Glide.with(it.ivMedia).
+                    load(item.uri).
+                    into(it.ivMedia)
                 }
             }
         }
@@ -63,7 +65,6 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
             if (item?.mimeType?.startsWith(VIDEO) == true) {
                 binding.tvMediaDuration.text = convertDuration(item.duration)
                 binding.tvMediaDuration.visibility = View.VISIBLE
-
             }
         }
 
@@ -93,4 +94,6 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
     override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
         holder.bind(currentList[position])
     }
+
+    override fun getItemViewType(position: Int): Int = position
 }

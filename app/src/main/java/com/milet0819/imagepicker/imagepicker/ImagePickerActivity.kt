@@ -31,6 +31,8 @@ import com.milet0819.imagepicker.AppController
 import com.milet0819.imagepicker.PermissionBottomSheetDialog
 import com.milet0819.imagepicker.R
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
+import com.milet0819.imagepicker.imagepicker.MediaAdapter.Companion.IMAGE
+import com.milet0819.imagepicker.imagepicker.MediaAdapter.Companion.VIDEO
 import com.milet0819.imagepicker.utils.isGranted
 import com.milet0819.imagepicker.utils.showListOptionAlertDialog
 import com.milet0819.notificationtest.common.utils.captureVideo
@@ -59,17 +61,13 @@ class ImagePickerActivity : AppCompatActivity() {
     private val mMediaAdapter by lazy {
         MediaAdapter(object : MediaAdapter.CameraAction {
             override fun onRequestCamera(position: Int) {
-                // 재활용으로 인한 이벤트 방지 로직
-                if (position != 0) {
-                    logger("Is not position 0")
-                    return
-                }
 
                 if (isGranted(this@ImagePickerActivity, Manifest.permission.CAMERA)) {
                     showCameraOptionsAlert()
                 } else {
                     requestCameraPermission.launch(Manifest.permission.CAMERA)
                 }
+
             }
         })
     }
@@ -152,6 +150,7 @@ class ImagePickerActivity : AppCompatActivity() {
         val space = 4
         val includeEdge = false
         binding.rvImagePicker.apply {
+            // TODO 구분선 두께가 점점 커지는 현상 수정 필요.
             addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
             adapter = mMediaAdapter
         }
@@ -347,10 +346,10 @@ class ImagePickerActivity : AppCompatActivity() {
 
             while (cursor.moveToNext()) {
                 val uri = ContentUris.withAppendedId(collectionUri, cursor.getLong(idColumn))
-                val name = cursor.getString(displayNameColumn)
+                val name = cursor.getString(displayNameColumn) ?: ""
                 val size = cursor.getLong(sizeColumn)
                 val duration = cursor.getInt(durationColumn)
-                val mimeType = cursor.getString(mimeTypeColumn)
+                val mimeType = cursor.getString(mimeTypeColumn) ?: ""
 
                 val media = Media(
                     uri = uri,
@@ -362,6 +361,11 @@ class ImagePickerActivity : AppCompatActivity() {
                 // TODO 추가적인 처리?
                 if (media.size == 0L) {
                     logger("Empty image")
+                    continue
+                }
+
+                // Q이하 버전에서 image video가 아닌 apk 파일 저장하는 현상 방지를 위한 로직
+                if (!(media.mimeType.startsWith(VIDEO) || media.mimeType.startsWith(IMAGE))) {
                     continue
                 }
 
