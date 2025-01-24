@@ -54,6 +54,8 @@ class ImagePickerActivity : AppCompatActivity() {
     private lateinit var mImageUri: Uri
     private lateinit var mVideoUri: Uri
 
+    private var mCurrentCategory = MediaCategory.ALL
+
     private val mMediaAdapter by lazy {
         MediaAdapter(object : MediaAdapter.CameraAction {
             override fun onRequestCamera(position: Int) {
@@ -142,23 +144,37 @@ class ImagePickerActivity : AppCompatActivity() {
 
         initPermissionManageLayout()
 
-        lifecycleScope.launch {
+        setMedia(mCurrentCategory)
+    }
 
+    private fun setMedia(category: MediaCategory) =lifecycleScope.launch {
+        val spanCount = 3
+        val space = 4
+        val includeEdge = false
+        binding.rvImagePicker.apply {
+            addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
+            adapter = mMediaAdapter
+        }
 
-            val spanCount = 3
-            val space = 4
-            val includeEdge = false
-            binding.rvImagePicker.apply {
-                addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
-                adapter = mMediaAdapter
+        val mediaList: List<Media?>
+        when (category) {
+            MediaCategory.ALL -> {
+                mediaList = getMediaList(contentResolver)
+                binding.tvMenu.text = getString(R.string.menu_all)
             }
 
-            // TODO TEST
-//            val images = getImages(contentResolver)
-//            val videos = getVideos(contentResolver)
-            val mediaList = getMediaList(contentResolver)
-            mMediaAdapter.submitList(mediaList)
+            MediaCategory.IMAGE -> {
+                mediaList = getImages(contentResolver)
+                binding.tvMenu.text = getString(R.string.menu_image)
+            }
+
+            MediaCategory.VIDEO -> {
+                mediaList = getVideos(contentResolver)
+                binding.tvMenu.text = getString(R.string.menu_video)
+            }
         }
+
+        mMediaAdapter.submitList(mediaList)
     }
 
     private fun initPermissionManageLayout() = with(binding) {
@@ -369,8 +385,26 @@ class ImagePickerActivity : AppCompatActivity() {
     private fun initListener() {
         binding.clMenu.setOnClickListener {
             val popup = PopupMenu(this@ImagePickerActivity, it)
-            popup.setOnMenuItemClickListener {
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.all -> {
+                        mCurrentCategory = MediaCategory.ALL
+                        setMedia(mCurrentCategory)
+                        true
+                    }
+                    R.id.image -> {
+                        mCurrentCategory = MediaCategory.IMAGE
+                        setMedia(mCurrentCategory)
+                        true
+                    }
+                    R.id.video -> {
+                        mCurrentCategory = MediaCategory.VIDEO
+                        setMedia(mCurrentCategory)
+                        true
+                    }
 
+                    else -> false
+                }
             }
             val inflater: MenuInflater = popup.menuInflater
             inflater.inflate(R.menu.image_picker_toolbar_menu, popup.menu)
@@ -452,5 +486,9 @@ class ImagePickerActivity : AppCompatActivity() {
 
     companion object {
         const val MEDIA_URI = "mediaUri"
+    }
+
+    enum class MediaCategory {
+        ALL, IMAGE, VIDEO
     }
 }
