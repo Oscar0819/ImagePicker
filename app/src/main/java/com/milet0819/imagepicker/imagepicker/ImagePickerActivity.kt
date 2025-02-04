@@ -1,6 +1,7 @@
 package com.milet0819.imagepicker.imagepicker
 
 import android.Manifest
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
@@ -23,6 +24,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -33,8 +35,10 @@ import com.milet0819.imagepicker.R
 import com.milet0819.imagepicker.databinding.ActivityImagePickerBinding
 import com.milet0819.imagepicker.imagepicker.MediaAdapter.Companion.IMAGE
 import com.milet0819.imagepicker.imagepicker.MediaAdapter.Companion.VIDEO
+import com.milet0819.imagepicker.utils.isDenied
 import com.milet0819.imagepicker.utils.isGranted
 import com.milet0819.imagepicker.utils.showListOptionAlertDialog
+import com.milet0819.notificationtest.common.utils.buildIntent
 import com.milet0819.notificationtest.common.utils.captureVideo
 import com.milet0819.notificationtest.common.utils.logger
 import com.milet0819.notificationtest.common.utils.requestPermission
@@ -61,13 +65,20 @@ class ImagePickerActivity : AppCompatActivity() {
     private val mMediaAdapter by lazy {
         MediaAdapter(object : MediaAdapter.CameraAction {
             override fun onRequestCamera(position: Int) {
-
                 if (isGranted(this@ImagePickerActivity, Manifest.permission.CAMERA)) {
                     showCameraOptionsAlert()
                 } else {
                     requestCameraPermission.launch(Manifest.permission.CAMERA)
                 }
 
+            }
+        }, object : MediaAdapter.OnItemClickListener {
+            override fun onItemClick(uri: Uri) {
+                val resultIntent = Intent().apply {
+                    putExtra(MEDIA_URI, uri.toString())
+                }
+                setResult(RESULT_OK, resultIntent)
+                finish()
             }
         })
     }
@@ -139,6 +150,25 @@ class ImagePickerActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        // 권한이 없을 경우 액티비티 종료
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (isDenied(baseContext, READ_MEDIA_VISUAL_USER_SELECTED) &&
+                isDenied(baseContext, READ_MEDIA_IMAGES) &&
+                isDenied(baseContext, READ_MEDIA_VIDEO)){
+                finish()
+            }
+
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (isDenied(baseContext, READ_MEDIA_IMAGES) &&
+                isDenied(baseContext, READ_MEDIA_VIDEO)){
+                finish()
+            }
+        } else {
+            if (isDenied(baseContext, READ_EXTERNAL_STORAGE)) {
+                finish()
+            }
+        }
 
         initPermissionManageLayout()
 

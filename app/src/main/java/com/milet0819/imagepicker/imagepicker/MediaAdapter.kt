@@ -1,5 +1,6 @@
 package com.milet0819.imagepicker.imagepicker
 
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.milet0819.imagepicker.databinding.ItemMediaBinding
 
-class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : DiffUtil.ItemCallback<Media>() {
+class MediaAdapter(val cameraAction: CameraAction, val itemClickListener: OnItemClickListener): ListAdapter<Media, MediaAdapter.MediaViewHolder>(object : DiffUtil.ItemCallback<Media>() {
     /**
      * areItemsTheSame 함수가 먼저 실행이 되고 해당 함수의 결과로 true가 반환됐을 경우에만 areContentsTheSame()이 호출됨.
      * 그렇기 때문에 areItemsTheSame()에는 일반적으로 id 처럼 아이템을 식별할 수 있는 유니크한 값을 비교하고,
@@ -34,7 +35,11 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
         fun onRequestCamera(position: Int)
     }
 
-    inner class MediaViewHolder(val binding: ItemMediaBinding) : RecyclerView.ViewHolder(binding.root) {
+    interface OnItemClickListener {
+        fun onItemClick(uri: Uri)
+    }
+
+    inner class MediaViewHolder(private val binding: ItemMediaBinding) : RecyclerView.ViewHolder(binding.root) {
         val context = binding.root.context
 
         fun bind(item: Media?) {
@@ -52,6 +57,10 @@ class MediaAdapter(val cameraAction: CameraAction): ListAdapter<Media, MediaAdap
                     it.ivCamera.visibility = View.GONE
 
                     checkType(item)
+
+                    binding.root.setOnClickListener {
+                        itemClickListener.onItemClick(item.uri)
+                    }
 
                     // TODO CHECK Glide options
                     Glide.with(it.ivMedia).
