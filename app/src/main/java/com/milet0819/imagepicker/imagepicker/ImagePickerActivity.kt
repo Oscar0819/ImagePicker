@@ -145,13 +145,14 @@ class ImagePickerActivity : AppCompatActivity() {
         setMedia(mCurrentCategory)
     }
 
-    private fun setMedia(category: MediaCategory) =lifecycleScope.launch {
+    private fun setMedia(category: MediaCategory) = lifecycleScope.launch {
         val spanCount = 3
         val space = 4
         val includeEdge = false
         binding.rvImagePicker.apply {
-            // TODO 구분선 두께가 점점 커지는 현상 수정 필요.
-            addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
+            if (itemDecorationCount == 0) {
+                addItemDecoration(GridSpaceItemDecoration(spanCount, space, includeEdge))
+            }
             adapter = mMediaAdapter
         }
 
@@ -323,7 +324,6 @@ class ImagePickerActivity : AppCompatActivity() {
             // Query all the device storage volumes instead of the primary only
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
-            // TODO 미디어 리스트 가져올 때 Q버전 미만에서 크래시 발생하는 부분 수정 중
             MediaStore.Files.getContentUri("external")
         }
 
@@ -490,6 +490,10 @@ class ImagePickerActivity : AppCompatActivity() {
 
     companion object {
         const val MEDIA_URI = "mediaUri"
+    }
+
+    enum class ClickType {
+        SINGLE, MULTIPLE
     }
 
     enum class MediaCategory {
